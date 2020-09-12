@@ -16,7 +16,7 @@ library(DT)
 
 # Introduction
 <br>
-This vignette will walk you through how to connect with data through an API. Specifically, we will look at how to access certain endpoints (tables) as well as how join returned datasets, create new variables, and explore the data through basic summarization and graphing.
+This vignette will walk you through how to connect with data through an API. Specifically, we will look at how to access certain endpoints (tables) as well as how join returned datasets, create new variables, and explore the data.
 <br>
 
 ## Required Packages
@@ -30,3 +30,47 @@ To get started, we'll need to ensure we have the tools installed and loaded into
 * **readr**: for reading in data
 * **tibble**: for creating special data frames with improved printing properties
 * **tidyr**: for reshaping data
+* **jsonlite**: for parsing API data
+* **httr**: for streaming data from an API
+<br>
+
+We'll read in the packages using the library() function:
+```{r packages, echo=TRUE}
+library(dplyr)
+library(DT)
+library(ggplot2)
+library(readr)
+library(tibble)
+library(tidyr)
+library(jsonlite)
+library(httr)
+```
+<br>
+
+# API
+```{r API1, echo=TRUE}
+baseURL1 <- "https://records.nhl.com/site/api"
+endpt1 <- "franchise"
+fullURL1 <- paste0(baseURL1, "/", endpt1)
+
+franGET <- GET(fullURL1)
+franGET_text <- content(franGET, "text")
+franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+franGET_json
+```
+<br>
+```{r fun1, echo=TRUE}
+retrieveFRAN <- function(tab) {
+  baseURL1 <- "https://records.nhl.com/site/api"
+  tab <- "franchise"
+  fullURL1 <- paste0(baseURL1, "/", tab)
+  franGET <- GET(fullURL1)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  return(franGET_json)
+}
+
+retrieveFRAN()
+```
+
+
