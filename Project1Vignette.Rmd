@@ -47,30 +47,174 @@ library(httr)
 ```
 <br>
 
-# API
-```{r API1, echo=TRUE}
-baseURL1 <- "https://records.nhl.com/site/api"
-endpt1 <- "franchise"
-fullURL1 <- paste0(baseURL1, "/", endpt1)
+# API Function Calls
 
-franGET <- GET(fullURL1)
-franGET_text <- content(franGET, "text")
-franGET_json <- fromJSON(franGET_text, flatten=TRUE)
-franGET_json
-```
 <br>
-```{r fun1, echo=TRUE}
-retrieveFRAN <- function(tab) {
-  baseURL1 <- "https://records.nhl.com/site/api"
-  tab <- "franchise"
-  fullURL1 <- paste0(baseURL1, "/", tab)
-  franGET <- GET(fullURL1)
+
+## Return `franchise` data set
+```{r fun1, echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+fetchFran <- function(tab) {
+  URL <- "https://records.nhl.com/site/api/franchise"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df)
+}
+
+fetchFran()
+```
+
+## Return `franchise` data by Team Name
+```{r fun2, echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+fetchFranName <- function(tab, name) {
+  URL <- "https://records.nhl.com/site/api/franchise"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df %>% filter(data.teamCommonName==name))
+}
+
+fetchFranName(name="Tigers")
+```
+
+## Return `franchise` data by Team ID
+```{r fun3, echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+fetchFranID <- function(tab, id) {
+  URL <- "https://records.nhl.com/site/api/franchise"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df %>% filter(data.id==id))
+}
+
+fetchFranID(id=1)
+```
+
+## Return `franchise team totals` dataset
+```{r fun4}
+fetchFranTotal <- function(tab, ...) {
+  URL <- "https://records.nhl.com/site/api/franchise-team-totals"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df)
+}
+
+head(fetchFranTotal(n))
+```
+
+## Return `franchise team totals` by Team Name
+```{r fun5}
+fetchFranNameTotal <- function(tab, name) {
+  URL <- "https://records.nhl.com/site/api/franchise-team-totals"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df %>% filter(data.teamName==name))
+}
+
+fetchFranNameTotal(name="Boston Bruins")
+```
+
+## Return `franchise team totals` by Franchise ID
+```{r fun6}
+fetchFranIDTotal <- function(tab, franID) {
+  URL <- "https://records.nhl.com/site/api/franchise-team-totals"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df %>% filter(data.franchiseId==franID))
+}
+
+fetchFranIDTotal(franID=8)
+```
+
+
+## Return `franchise season records` by Franchise ID
+```{r fun7, echo=TRUE}
+fetchSeasonRecords <- function(ID, ...) {
+  URL <- "https://records.nhl.com/site/api/franchise-season-records?cayenneExp=franchiseId="
+  ID <- ID
+  fullURL <- paste0(URL,ID)
+  franGET <- GET(fullURL)
   franGET_text <- content(franGET, "text")
   franGET_json <- fromJSON(franGET_text, flatten=TRUE)
   return(franGET_json)
 }
 
-retrieveFRAN()
+fetchSeasonRecords(ID=6)
 ```
 
+## Return `goalie records` by Franchise ID
+```{r fun8}
+fetchGoalieRecords <- function(ID, ...) { 
+  URL <- "https://records.nhl.com/site/api/franchise-goalie-records?cayenneExp=franchiseId="
+  ID <- ID
+  fullURL <- paste0(URL,ID)
+  franGET <- GET(fullURL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  return(franGET_json)
+}
+
+fetchGoalieRecords(ID=12)
+```
+
+## Return `skater records` by Franchise ID
+```{r fun9}
+fetchSkaterRecords <- function(ID, ...) {
+  URL <- "https://records.nhl.com/site/api/franchise-skater-records?cayenneExp=franchiseId="
+  ID <- ID
+  fullURL <- paste0(URL,ID)
+  franGET <- GET(fullURL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  return(franGET_json)
+}
+
+fetchSkaterRecords(ID=9)
+```
+
+## Return `team stats` data
+```{r fun10}
+fetchTeamStats <- function(type, ...) {
+  URL <- "https://statsapi.web.nhl.com/api/v1/teams"
+  mod1 <- "?expand=team.roster"
+  mod2 <- "?expand=person.names"
+  mod3 <- "?expand=team.schedule.next"
+  mod4 <- "?expand=team.schedule.previous"
+  mod5 <- "?expand=team.stats"
+  mod6 <- "?expand=team.roster&season=20142015"
+  mod7 <- "?teamId=4,5,29"
+  mod8 <- "?stats=statsSingleSeasonPlayoffs"
+  switch(type,
+         roster = paste0(URL, "/", mod1),
+         rosterLess = paste0(URL, "/", mod2),
+         nextGame = paste0(URL, "/", mod3),
+         lastGame = paste0(URL, "/", mod4),
+         teamStats = paste(URL, "/", mod5),
+         rosterBySeason = paste0(URL, "/", mod6),
+         mulitpleTeams = paste0(URL, "/", mod7),
+         multipleStats = paste0(URL, "/", mod8))
+}
+  franGET <- GET(type)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  return(franGET_json)
+}
+
+fetchTeamStats("roster")
+```
 
