@@ -32,6 +32,7 @@ To get started, we'll need to ensure we have the tools installed and loaded into
 * **tidyr**: for reshaping data
 * **jsonlite**: for parsing API data
 * **httr**: for streaming data from an API
+* **knitr**: for creating tables with nic printing properties
 <br>
 
 We'll read in the packages using the library() function:
@@ -44,6 +45,7 @@ library(tibble)
 library(tidyr)
 library(jsonlite)
 library(httr)
+library(knitr)
 ```
 <br>
 
@@ -187,34 +189,54 @@ fetchSkaterRecords <- function(ID, ...) {
 fetchSkaterRecords(ID=9)
 ```
 
+
 ## Return `team stats` data
 ```{r fun10}
-fetchTeamStats <- function(type, ...) {
-  URL <- "https://statsapi.web.nhl.com/api/v1/teams"
-  mod1 <- "?expand=team.roster"
-  mod2 <- "?expand=person.names"
-  mod3 <- "?expand=team.schedule.next"
-  mod4 <- "?expand=team.schedule.previous"
-  mod5 <- "?expand=team.stats"
-  mod6 <- "?expand=team.roster&season=20142015"
-  mod7 <- "?teamId=4,5,29"
-  mod8 <- "?stats=statsSingleSeasonPlayoffs"
-  switch(type,
-         roster = paste0(URL, "/", mod1),
-         rosterLess = paste0(URL, "/", mod2),
-         nextGame = paste0(URL, "/", mod3),
-         lastGame = paste0(URL, "/", mod4),
-         teamStats = paste(URL, "/", mod5),
-         rosterBySeason = paste0(URL, "/", mod6),
-         mulitpleTeams = paste0(URL, "/", mod7),
-         multipleStats = paste0(URL, "/", mod8))
-}
-  franGET <- GET(type)
-  franGET_text <- content(franGET, "text")
-  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
-  return(franGET_json)
+
+```
+<br>
+## Wrapper function
+<br>
+
+# Data Manipulation
+<br>
+```{r}
+
+str(fetchSkaterRecords(ID=1))
+```
+
+
+
+## Joins
+<br>
+
+
+## Creating New Variables
+<br>
+
+# Nummeric Summarization
+
+## 5 Number Summary
+<br>
+We'll do some basic numeric summarization using data from one of hockey's most storied franchises, the Montreal Canadiens. Let's pull in Skater Records using our fetchSkaterRecords() function, setting ID=1, to get started. Because this data is in list form, we will convert it to a data frame. Next, let provide a basic five number summary of assists and goals by skater position. Because we'll need to generate tables to four positions (R - right wing; C - center; L - left wing; D -), we'll create a function called summByPosition() to help automate this process. 
+```{r numsumm, echo=TRUE}
+canadiensSkaterRec <- fetchSkaterRecords(ID=1)
+canSkateRec <- as.data.frame(canadiensSkaterRec)
+
+summByPosition <- function(position) {
+  data <- canSkateRec %>% filter(data.positionCode==position) %>% select(data.assists, data.goals)
+  kable(apply(data, 2, summary), col.names=c("Assists", "Goals"), caption = paste0("Historical Summary of Assists & Goals Scored by Position=", position, " for the Montreal Canadiens"))
 }
 
-fetchTeamStats("roster")
+summByPosition("R")
+summByPosition("C")
+summByPosition("L")
+summByPosition("D")
 ```
+The tables generated above reveal that right wing(R), left wing(L) and centers(C) score, on average, higher than defensemen (D). This aligns with what I would've expected given the fact that offensive positions are tasked with being a team's primary scorers, while defensive positions are not. I was somewhat surprised to see that, though defense trails offense in assists on average, that it wasn't by much when comparing left wingers to defensemen.
+
+## Contingency Tables
+
+<br>
+#Graphing
 

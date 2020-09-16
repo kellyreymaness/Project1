@@ -23,6 +23,11 @@ Kelly Baker
         ID](#return-goalie-records-by-franchise-id)
       - [Return `skater records` by Franchise
         ID](#return-skater-records-by-franchise-id)
+      - [Return `team stats` data](#return-team-stats-data)
+  - [Data Manipulation](#data-manipulation)
+      - [Joins](#joins)
+      - [Creating New Variables](#creating-new-variables)
+  - [Nummeric Summarization](#nummeric-summarization)
 
 # Introduction
 
@@ -46,7 +51,8 @@ project: <br>
     properties
   - **tidyr**: for reshaping data
   - **jsonlite**: for parsing API data
-  - **httr**: for streaming data from an API <br>
+  - **httr**: for streaming data from an API
+  - **knitr**: for creating tables with nic printing properties <br>
 
 We’ll read in the packages using the library() function:
 
@@ -74,6 +80,10 @@ library(httr)
 ```
 
     ## Warning: package 'httr' was built under R version 4.0.2
+
+``` r
+library(knitr)
+```
 
 <br>
 
@@ -254,7 +264,7 @@ head(fetchFranTotal(n))
     ## 1             507                      82            96           783
     ## 2              53                       0            NA            74
     ## 3             674                      81           170           942
-    ## 4              49                       1            NA            90
+    ## 4              49                       2            NA            90
     ## 5            1132                      73           448          1600
     ## 6             104                       0             1           137
     ##   data.lastSeasonId data.losses data.overtimeLosses data.penaltyMinutes
@@ -268,7 +278,7 @@ head(fetchFranTotal(n))
     ## 1         0.5330        3131             674                      80
     ## 2         0.0039           2              67                       0
     ## 3         0.5115        3818             896                      78
-    ## 4         0.0137           8              83                       0
+    ## 4         0.0137           8              83                       2
     ## 5         0.5125        6667            1561                      74
     ## 6         0.0000           0             162                       0
     ##   data.roadTies data.roadWins data.shootoutLosses data.shootoutWins
@@ -325,7 +335,7 @@ fetchFranNameTotal(name="Boston Bruins")
     ## 2                NA         332                   0               10505
     ##   data.pointPctg data.points data.roadLosses data.roadOvertimeLosses
     ## 1         0.5625        7391            1434                      95
-    ## 2         0.0301          40             183                       0
+    ## 2         0.0301          40             183                       2
     ##   data.roadTies data.roadWins data.shootoutLosses data.shootoutWins
     ## 1           415          1341                  80                64
     ## 2             3           135                   0                 0
@@ -1271,3 +1281,150 @@ fetchSkaterRecords(ID=9)
     ## 
     ## $total
     ## [1] 38
+
+## Return `team stats` data
+
+<br> \#\# Wrapper function <br>
+
+# Data Manipulation
+
+<br>
+
+``` r
+str(fetchSkaterRecords(ID=1))
+```
+
+    ## No encoding supplied: defaulting to UTF-8.
+
+    ## List of 2
+    ##  $ data :'data.frame':   788 obs. of  30 variables:
+    ##   ..$ id                         : int [1:788] 16891 16911 16990 17000 17025 17054 17074 17138 17191 17199 ...
+    ##   ..$ activePlayer               : logi [1:788] FALSE FALSE FALSE FALSE FALSE FALSE ...
+    ##   ..$ assists                    : int [1:788] 712 688 422 728 87 368 346 369 686 0 ...
+    ##   ..$ firstName                  : chr [1:788] "Jean" "Henri" "Maurice" "Guy" ...
+    ##   ..$ franchiseId                : int [1:788] 1 1 1 1 1 1 1 1 1 1 ...
+    ##   ..$ franchiseName              : chr [1:788] "Montréal Canadiens" "Montréal Canadiens" "Montréal Canadiens" "Montréal Canadiens" ...
+    ##   ..$ gameTypeId                 : int [1:788] 2 2 2 2 2 2 2 2 2 2 ...
+    ##   ..$ gamesPlayed                : int [1:788] 1125 1258 978 961 523 871 580 617 1202 3 ...
+    ##   ..$ goals                      : int [1:788] 507 358 544 518 88 408 223 243 197 0 ...
+    ##   ..$ lastName                   : chr [1:788] "Beliveau" "Richard" "Richard" "Lafleur" ...
+    ##   ..$ mostAssistsGameDates       : chr [1:788] "1955-02-19, 1956-12-01, 1962-11-24, 1965-11-20, 1967-12-28" "1963-01-12, 1964-02-01" "1954-01-09" "1977-03-10, 1977-03-12, 1978-02-23, 1979-04-07, 1980-11-12, 1980-12-27, 1981-11-21" ...
+    ##   ..$ mostAssistsOneGame         : int [1:788] 4 5 5 4 2 4 4 5 4 0 ...
+    ##   ..$ mostAssistsOneSeason       : int [1:788] 58 52 36 80 16 45 82 67 66 0 ...
+    ##   ..$ mostAssistsSeasonIds       : chr [1:788] "19601961" "19571958" "19541955" "19761977" ...
+    ##   ..$ mostGoalsGameDates         : chr [1:788] "1955-11-05, 1959-03-07, 1969-02-11" "1957-10-17, 1959-03-14, 1961-03-11, 1965-02-24, 1967-03-19" "1944-12-28" "1975-01-26" ...
+    ##   ..$ mostGoalsOneGame           : int [1:788] 4 3 5 4 2 4 3 4 3 0 ...
+    ##   ..$ mostGoalsOneSeason         : int [1:788] 47 30 50 60 21 60 36 43 19 0 ...
+    ##   ..$ mostGoalsSeasonIds         : chr [1:788] "19551956" "19591960" "19441945" "19771978" ...
+    ##   ..$ mostPenaltyMinutesOneSeason: int [1:788] 143 91 125 51 358 51 181 19 76 0 ...
+    ##   ..$ mostPenaltyMinutesSeasonIds: chr [1:788] "19551956" "19601961" "19541955" "19721973" ...
+    ##   ..$ mostPointsGameDates        : chr [1:788] "1959-03-07" "1957-10-17" "1944-12-28" "1975-01-04, 1978-02-28, 1979-04-07" ...
+    ##   ..$ mostPointsOneGame          : int [1:788] 7 6 8 6 3 5 5 6 4 0 ...
+    ##   ..$ mostPointsOneSeason        : int [1:788] 91 80 74 136 37 105 117 110 85 0 ...
+    ##   ..$ mostPointsSeasonIds        : chr [1:788] "19581959" "19571958" "19541955" "19761977" ...
+    ##   ..$ penaltyMinutes             : int [1:788] 1033 932 1287 381 2248 400 695 107 706 0 ...
+    ##   ..$ playerId                   : int [1:788] 8445408 8448320 8448321 8448624 8449883 8451354 8449062 8449796 8450936 8444854 ...
+    ##   ..$ points                     : int [1:788] 1219 1046 966 1246 175 776 569 612 883 0 ...
+    ##   ..$ positionCode               : chr [1:788] "C" "C" "R" "R" ...
+    ##   ..$ rookiePoints               : int [1:788] 34 40 11 64 15 16 NA 71 6 0 ...
+    ##   ..$ seasons                    : int [1:788] 20 20 18 14 10 13 9 8 17 1 ...
+    ##  $ total: int 788
+
+## Joins
+
+<br>
+
+## Creating New Variables
+
+<br>
+
+# Nummeric Summarization
+
+<br> We’ll do some basic numeric summarization using data from one of
+hockey’s most storied franchises, the Montreal Canadiens. Let’s pull in
+Skater Records using our fetchSkaterRecords() function, setting ID=1, to
+get started. Because this data is in list form, we will convert it to a
+data frame. Next, let provide a basic five number summary of assists and
+goals by skater position. Because we’ll need to generate tables to four
+positions (R - right wing; C - center; L - left wing; D - defenseman),
+we’ll create a function called summByPosition() to help automate this
+process.
+
+``` r
+canadiensSkaterRec <- fetchSkaterRecords(ID=1)
+```
+
+    ## No encoding supplied: defaulting to UTF-8.
+
+``` r
+canSkateRec <- as.data.frame(canadiensSkaterRec)
+
+summByPosition <- function(position) {
+  data <- canSkateRec %>% filter(data.positionCode==position) %>% select(data.assists, data.goals)
+  kable(apply(data, 2, summary), col.names=c("Assists", "Goals"), caption = paste0("Historical Summary of Assists & Goals Scored by Position=", position, " for the Montreal Canadiens"))
+}
+
+summByPosition("R")
+```
+
+|         |   Assists |     Goals |
+| ------- | --------: | --------: |
+| Min.    |   0.00000 |   0.00000 |
+| 1st Qu. |   1.00000 |   0.00000 |
+| Median  |   6.00000 |   6.00000 |
+| Mean    |  40.67251 |  36.12281 |
+| 3rd Qu. |  33.50000 |  28.00000 |
+| Max.    | 728.00000 | 544.00000 |
+
+Historical Summary of Assists & Goals Scored by Position=R for the
+Montreal Canadiens
+
+``` r
+summByPosition("C")
+```
+
+|         |   Assists |     Goals |
+| ------- | --------: | --------: |
+| Min.    |   0.00000 |   0.00000 |
+| 1st Qu. |   1.00000 |   0.00000 |
+| Median  |   7.00000 |   4.00000 |
+| Mean    |  50.32821 |  33.72308 |
+| 3rd Qu. |  40.00000 |  25.00000 |
+| Max.    | 712.00000 | 507.00000 |
+
+Historical Summary of Assists & Goals Scored by Position=C for the
+Montreal Canadiens
+
+``` r
+summByPosition("L")
+```
+
+|         |   Assists |     Goals |
+| ------- | --------: | --------: |
+| Min.    |   0.00000 |   0.00000 |
+| 1st Qu. |   1.00000 |   0.00000 |
+| Median  |   7.00000 |   6.00000 |
+| Mean    |  41.03955 |  33.98305 |
+| 3rd Qu. |  44.00000 |  38.00000 |
+| Max.    | 369.00000 | 408.00000 |
+
+Historical Summary of Assists & Goals Scored by Position=L for the
+Montreal Canadiens
+
+``` r
+summByPosition("D")
+```
+
+|         |  Assists |     Goals |
+| ------- | -------: | --------: |
+| Min.    |   0.0000 |   0.00000 |
+| 1st Qu. |   1.0000 |   0.00000 |
+| Median  |   6.0000 |   1.00000 |
+| Mean    |  36.3551 |  11.44082 |
+| 3rd Qu. |  32.0000 |  11.00000 |
+| Max.    | 686.0000 | 197.00000 |
+
+Historical Summary of Assists & Goals Scored by Position=D for the
+Montreal Canadiens
+
+<br> \#Graphing
