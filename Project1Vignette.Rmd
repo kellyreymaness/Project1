@@ -50,7 +50,6 @@ library(knitr)
 <br>
 
 # API Function Calls
-
 <br>
 
 ## Return `franchise` data set
@@ -192,8 +191,36 @@ fetchSkaterRecords(ID=9)
 
 ## Return `team stats` data
 ```{r fun10}
+roster <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.roster") %>% content("text") %>% fromJSON(flatten=TRUE)
+
+
+fetchRosterLess <- function(ID=NULL, ...) { GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/", ID, "/roster")) %>% content("text") %>% fromJSON(flatten=TRUE)
+}
+
+fetchPersonData <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=person.names") %>% content("text") %>% fromJSON(flatten=TRUE)
+
+
+fetchNextGame <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.schedule.next") %>% content("text") %>% fromJSON(flatten=TRUE)
+
+fetchLastGame <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=?expand=team.schedule.previous") %>% content("text") %>% fromJSON(flatten=TRUE)
+
+
+fetchSeasonStats <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=?expand=team.stats") %>% content("text") %>% fromJSON(flatten=TRUE)
+
+rosterBySeason <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.roster&season=20142015") %>% content("text") %>% fromJSON(flatten=TRUE)
+rosterBySeason[2]
+
+fetchMultiTeams <- GET("https://statsapi.web.nhl.com/api/v1/teams/?teamId=4,5,29") %>% content("text") %>% fromJSON(flatten=TRUE)
+fetchMultiTeams
+
+fetchMultiStats <- GET("https://statsapi.web.nhl.com/api/v1/teams/?stats=statsSingleSeasonPlayoffs") %>% content("text") %>% fromJSON(flatten=TRUE)
+fetchMultiStats
+```
+
+```{r}
 
 ```
+
 <br>
 ## Wrapper function
 <br>
@@ -205,20 +232,34 @@ fetchSkaterRecords(ID=9)
 str(fetchSkaterRecords(ID=1))
 ```
 
-
-
 ## Joins
 <br>
 
 
 ## Creating New Variables
 <br>
-
-# Nummeric Summarization
-
-## 5 Number Summary
+Pulling in franchise data using the fetchFranTotal() function, I filtered the dataset to only include active franchises then put in order of first season. From here, I cut the data into 5 chunks representing roughly 15 to 20 year increments and created a new variable based on age of the franchises called `franAge`. The categories assigned were Oldest, Older, Old, New and Newest. 
+```{r var1, echo=TRUE}
+franData <- fetchFranTotal() %>% filter(data.activeFranchise==1) %>% arrange(data.firstSeasonId)
+franData %>% as_tibble() %>% 
+  mutate(franAge = ifelse(franData$data.firstSeasonId >= 20012002, "Newest",
+       ifelse(franData$data.firstSeasonId >= 19951996, "New",
+              ifelse(franData$data.firstSeasonId >= 19801981, "Old",
+                     ifelse(franData$data.firstSeasonId >= 19671968, "Older", "Oldest")))))
+franData
+```
 <br>
-We'll do some basic numeric summarization using data from one of hockey's most storied franchises, the Montreal Canadiens. Let's pull in Skater Records using our fetchSkaterRecords() function, setting ID=1, to get started. Because this data is in list form, we will convert it to a data frame. Next, let provide a basic five number summary of assists and goals by skater position. Because we'll need to generate tables to four positions (R - right wing; C - center; L - left wing; D -), we'll create a function called summByPosition() to help automate this process. 
+I thought it would also be nice to look at this dataset and be able to quickly ascertain what the win percentage was for each team. In order to accomplish this, I created the variable `winPct` that reflects total wins divided by total games played. This is a particularly interesting variabile and reveals much even in table form. You can quickly see win percentages by team by game type (i.e. regualar season vs. playoffs).
+```{r var2, echo=TRUE}
+franData %>% as_tibble() %>% mutate(winPct = (data.wins + data.ties)/(data.wins + data.ties + data.losses))
+```
+
+
+# Data Exploration & Visualization
+
+## Summarizing Numeric Data
+<br>
+The tables below provide some basic numeric summarization using data from one of hockey's most storied franchises: the Montreal Canadiens. I've pulled in Skater Records using our fetchSkaterRecords() function, setting ID=1, to get started. Because this data is in list form, I will convert it to a data frame. Next, I've written code to create a basic five number summary of assists and goals by skater position. Because I'll need to generate tables across four positions (R - right wing; C - center; L - left wing; D - defensemen), I'll create a function called summByPosition() to help automate this process. 
 ```{r numsumm, echo=TRUE}
 canadiensSkaterRec <- fetchSkaterRecords(ID=1)
 canSkateRec <- as.data.frame(canadiensSkaterRec)
@@ -234,9 +275,20 @@ summByPosition("L")
 summByPosition("D")
 ```
 The tables generated above reveal that right wing(R), left wing(L) and centers(C) score, on average, higher than defensemen (D). This aligns with what I would've expected given the fact that offensive positions are tasked with being a team's primary scorers, while defensive positions are not. I was somewhat surprised to see that, though defense trails offense in assists on average, that it wasn't by much when comparing left wingers to defensemen.
-
-## Contingency Tables
-
 <br>
+
+## Summarizing Categorical Data
+<br>
+```{r catsumm, echo=TRUE}
+franData <- fetchFranTotal() %>% filter(data.activeFranchise==1) %>% arrange(data.firstSeasonId)
+franData %>% as_tibble() %>% 
+  mutate(franAge = ifelse(franData$data.firstSeasonId >= 20012002, "Newest",
+       ifelse(franData$data.firstSeasonId >= 19951996, "New",
+              ifelse(franData$data.firstSeasonId >= 19801981, "Old",
+                     ifelse(franData$data.firstSeasonId >= 19671968, "Older", "Oldest")))))
+```
+<br>
+
 #Graphing
+<br>
 
