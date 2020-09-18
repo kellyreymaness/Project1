@@ -201,7 +201,7 @@ fetchMultiStats <- GET("https://statsapi.web.nhl.com/api/v1/teams/?stats=statsSi
 ```
 
 ```{r}
-
+fetchSeasonStats
 ```
 
 <br>
@@ -284,5 +284,25 @@ ggplot(franData, aes(x = data.wins, y = data.roadWins)) + geom_jitter(aes(color=
 ## Scatterplot: Total Losses vs. Total Penalty Minutes
 The scatterplot below shows total losses compared to total penalty minutes by franchise. This has a moderately strong positive linear association, though not quite as strong as the relationship seen in the previous plot. I expected this correlation given that players in penalty boxes generally give their team a disadvantage by allowing the other team a power play (unless of course the other team is penalized similarly at the exact same time and thus may experience more losses. Time does look to play a role here. We see the oldest franchises again having a higher number of penalty minutes and a higher number of losses, which again make sense because they have simply have longer (i.e more opportunity) to experience those things ove newer franchises. 
 ```{r scatter2, echo=TRUE}
-ggplot(franData, aes(x = data.losses, y = data.penaltyMinutes)) + geom_jitter(aes(color=franAge)) + ggtitle("Scatterplot of Total Losses vs. Penalty Minutes") + ylab("Total Penalty Minutes") + xlab("Total Losses")
+ggplot(franData, aes(x = data.losses, y = data.penaltyMinutes, group=franAge)) + geom_jitter(aes(color=franAge)) + ggtitle("Scatterplot of Total Losses vs. Penalty Minutes") + ylab("Total Penalty Minutes") + xlab("Total Losses")
 ```
+
+<br>
+## Histogram: Frequency of Seasons Played by Vancouver Canucks Goalies
+The histogram below shows the frequency of seasons played by goalies for the Vancouver Canucks. The distribution is right skewed revealing that goalies most frequently play 1 to 2 seasons.
+```{r}
+vanGoalieData <- fetchGoalieRecords(ID=20)
+vanGoalieData <- vanGoalieData[[1]][26]
+
+ggplot(vanGoalieData, aes(x=seasons)) + geom_histogram(bins=10) + ggtitle("Histogram of Seasons Played by Vancouver Canucks Goalies") + xlab("Seasons Played")
+```
+<br>
+
+## Barplot
+Using skater data from the Montreal Canadiens that we looked at earlier, I've developed a barplot to show the count of max goals scored in one game broken down by position. We see defensemen showing high counts for both zero and one goal max per game, which makes sense since it isn't their primary job to score. As the max number of goals per game increases, we see the counts for defensive positions fall off significantly. Counts for offensive positions at all available max goals is similar for zero to two goals max and begins to decline moderatly from there as we look from left to right across the barplot. Centers was the only position to register 6 goals max per game (the largest per game total recorded for the Canadiens).
+```{r barplot, echo=TRUE}
+canSkateRec 
+
+ggplot(canSkateRec, aes(x=data.mostGoalsOneGame)) + geom_bar(aes(fill=data.positionCode), position="dodge") + scale_fill_discrete("Position") + xlab("Max Goals in One Game") + ggtitle("Barplot of Max Goals/Game by Position")
+```
+
