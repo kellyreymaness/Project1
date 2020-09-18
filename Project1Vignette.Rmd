@@ -63,8 +63,6 @@ fetchFran <- function(tab) {
   invisible(franGET_df)
   return(franGET_df)
 }
-
-fetchFran()
 ```
 
 ## Return `franchise` data by Team Name
@@ -78,8 +76,6 @@ fetchFranName <- function(tab, name) {
   invisible(franGET_df)
   return(franGET_df %>% filter(data.teamCommonName==name))
 }
-
-fetchFranName(name="Tigers")
 ```
 
 ## Return `franchise` data by Team ID
@@ -93,8 +89,6 @@ fetchFranID <- function(tab, id) {
   invisible(franGET_df)
   return(franGET_df %>% filter(data.id==id))
 }
-
-fetchFranID(id=1)
 ```
 
 ## Return `franchise team totals` dataset
@@ -123,8 +117,6 @@ fetchFranNameTotal <- function(tab, name) {
   invisible(franGET_df)
   return(franGET_df %>% filter(data.teamName==name))
 }
-
-fetchFranNameTotal(name="Boston Bruins")
 ```
 
 ## Return `franchise team totals` by Franchise ID
@@ -138,8 +130,6 @@ fetchFranIDTotal <- function(tab, franID) {
   invisible(franGET_df)
   return(franGET_df %>% filter(data.franchiseId==franID))
 }
-
-fetchFranIDTotal(franID=8)
 ```
 
 
@@ -154,8 +144,6 @@ fetchSeasonRecords <- function(ID, ...) {
   franGET_json <- fromJSON(franGET_text, flatten=TRUE)
   return(franGET_json)
 }
-
-fetchSeasonRecords(ID=6)
 ```
 
 ## Return `goalie records` by Franchise ID
@@ -169,8 +157,6 @@ fetchGoalieRecords <- function(ID, ...) {
   franGET_json <- fromJSON(franGET_text, flatten=TRUE)
   return(franGET_json)
 }
-
-fetchGoalieRecords(ID=12)
 ```
 
 ## Return `skater records` by Franchise ID
@@ -184,8 +170,6 @@ fetchSkaterRecords <- function(ID, ...) {
   franGET_json <- fromJSON(franGET_text, flatten=TRUE)
   return(franGET_json)
 }
-
-fetchSkaterRecords(ID=9)
 ```
 
 
@@ -211,10 +195,9 @@ rosterBySeason <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.ro
 rosterBySeason[2]
 
 fetchMultiTeams <- GET("https://statsapi.web.nhl.com/api/v1/teams/?teamId=4,5,29") %>% content("text") %>% fromJSON(flatten=TRUE)
-fetchMultiTeams
+
 
 fetchMultiStats <- GET("https://statsapi.web.nhl.com/api/v1/teams/?stats=statsSingleSeasonPlayoffs") %>% content("text") %>% fromJSON(flatten=TRUE)
-fetchMultiStats
 ```
 
 ```{r}
@@ -227,10 +210,6 @@ fetchMultiStats
 
 # Data Manipulation
 <br>
-```{r}
-
-str(fetchSkaterRecords(ID=1))
-```
 
 ## Joins
 <br>
@@ -238,22 +217,17 @@ str(fetchSkaterRecords(ID=1))
 
 ## Creating New Variables
 <br>
-Pulling in franchise data using the fetchFranTotal() function, I filtered the dataset to only include active franchises then put in order of first season. From here, I cut the data into 5 chunks representing roughly 15 to 20 year increments and created a new variable based on age of the franchises called `franAge`. The categories assigned were Oldest, Older, Old, New and Newest. 
+Pulling in franchise data using the fetchFranTotal() function, I filtered the dataset to only include active franchises then put in order of first season. From here, I cut the data into 2 chunks representing franchises more than 50 years old ("Oldest") and team less then 50 years old ("Newest").
 ```{r var1, echo=TRUE}
 franData <- fetchFranTotal() %>% filter(data.activeFranchise==1) %>% arrange(data.firstSeasonId)
-franData %>% as_tibble() %>% 
-  mutate(franAge = ifelse(franData$data.firstSeasonId >= 20012002, "Newest",
-       ifelse(franData$data.firstSeasonId >= 19951996, "New",
-              ifelse(franData$data.firstSeasonId >= 19801981, "Old",
-                     ifelse(franData$data.firstSeasonId >= 19671968, "Older", "Oldest")))))
-franData
+franData <- franData %>% as_tibble() %>% 
+  mutate(franAge = ifelse(franData$data.firstSeasonId >= 19701971, "Newest", "Oldest"))
 ```
 <br>
-I thought it would also be nice to look at this dataset and be able to quickly ascertain what the win percentage was for each team. In order to accomplish this, I created the variable `winPct` that reflects total wins divided by total games played. This is a particularly interesting variabile and reveals much even in table form. You can quickly see win percentages by team by game type (i.e. regualar season vs. playoffs).
+I thought it would also be nice to look at this dataset and be able to quickly ascertain what the win percentage was for each team. In order to accomplish this, I created the variable `winPct` that reflects total wins divided by total games played. This is a particularly interesting variable and reveals much even in table form. After sorting by `winPct`, one can quickly glimpse the winningest franchises in hockey history. 
 ```{r var2, echo=TRUE}
-franData %>% as_tibble() %>% mutate(winPct = (data.wins + data.ties)/(data.wins + data.ties + data.losses))
+franData <- franData %>% as_tibble() %>% mutate(winPct = (data.wins)/(data.gamesPlayed)) %>% arrange(desc(winPct))
 ```
-
 
 # Data Exploration & Visualization
 
@@ -274,21 +248,41 @@ summByPosition("C")
 summByPosition("L")
 summByPosition("D")
 ```
+<br>
 The tables generated above reveal that right wing(R), left wing(L) and centers(C) score, on average, higher than defensemen (D). This aligns with what I would've expected given the fact that offensive positions are tasked with being a team's primary scorers, while defensive positions are not. I was somewhat surprised to see that, though defense trails offense in assists on average, that it wasn't by much when comparing left wingers to defensemen.
 <br>
 
 ## Summarizing Categorical Data
 <br>
-```{r catsumm, echo=TRUE}
-franData <- fetchFranTotal() %>% filter(data.activeFranchise==1) %>% arrange(data.firstSeasonId)
-franData %>% as_tibble() %>% 
-  mutate(franAge = ifelse(franData$data.firstSeasonId >= 20012002, "Newest",
-       ifelse(franData$data.firstSeasonId >= 19951996, "New",
-              ifelse(franData$data.firstSeasonId >= 19801981, "Old",
-                     ifelse(franData$data.firstSeasonId >= 19671968, "Older", "Oldest")))))
+Working with the franchise records data and the new variable `franAge` created previously, I have created a contingency table below that shows the frequency of franchises by age classification (either Oldest or Newest). Newest franchises are more frequent by almost double that of Oldest franchises, however, that data is somewhat misleading. Each franchise appears twice in the dataset based on type of season. See more below. 
+```{r catsumm1, echo=TRUE}
+kable(table(franData$franAge))
+```
+<br>
+Adding a second variable, `gameTypeId`, we get a two way contingency table that shows the frequency of franchises by age status and season type. This table tells us that there are 15 teams classified as "Oldest" and all teams with that classification have had a regular season and a post season in hockey history. However, the Newest franchises appears to have 29 teams classified as such, with one team not ever having had a post-season.
+```{r catsumm2, echo=TRUE}
+kable(table(franData$franAge, franData$data.gameTypeId), col.names = c("Regular Season", "Playoffs"))
 ```
 <br>
 
 #Graphing
 <br>
 
+## Boxplot: Winning Percentage by Franchise Age
+The visual below shows boxplots of winning percentage by franchise age classification. The plots reveal that the newest franchises have greater variability in winning percentage than teams classified "Oldest".
+```{r boxplot1, echo=TRUE}
+ggplot(franData, aes(x = franAge, y = winPct)) + geom_boxplot() + geom_jitter(aes(color=franAge)) + ggtitle("Boxplot of Winning Percentage by Franchise Age") + ylab("Winning Percentage") + xlab("Franchise Age Classification")
+```
+<br>
+
+## Scatterplot: Total Wins v. Road Wins
+The overarching purpose of the scatterplot below is to compares total wins and road wins. We can see a vey strong, positive linear association between these two variables, which I expected. Winning games away from home is generally more challenging that in front of a friendly home crowd so I expected as the road wins increased, so too would oveall wins and the success of the franchise. I also a color grouping so that we can see the age of franchises. In this case, the major insight to be drawn from this is that the oldest franchises tend to have the overall most wins -- which again makes sense because older teams have been playing longer and simply have the opportunity to win more games than newer franchises. 
+```{r scatter, echo=TRUE}
+ggplot(franData, aes(x = data.wins, y = data.roadWins)) + geom_jitter(aes(color=franAge)) + ggtitle("Scatterplot of Total Wins vs. Road Wins") + ylab("Wins on the Road") + xlab("Total Wins")
+```
+<br>
+## Scatterplot: Total Losses vs. Total Penalty Minutes
+The scatterplot below shows total losses compared to total penalty minutes by franchise. This has a moderately strong positive linear association, though not quite as strong as the relationship seen in the previous plot. I expected this correlation given that players in penalty boxes generally give their team a disadvantage by allowing the other team a power play (unless of course the other team is penalized similarly at the exact same time and thus may experience more losses. Time does look to play a role here. We see the oldest franchises again having a higher number of penalty minutes and a higher number of losses, which again make sense because they have simply have longer (i.e more opportunity) to experience those things ove newer franchises. 
+```{r scatter2, echo=TRUE}
+ggplot(franData, aes(x = data.losses, y = data.penaltyMinutes)) + geom_jitter(aes(color=franAge)) + ggtitle("Scatterplot of Total Losses vs. Penalty Minutes") + ylab("Total Penalty Minutes") + xlab("Total Losses")
+```
