@@ -8,15 +8,13 @@ output:
     toc_depth: 2
 ---
 
-```{r setup, include=FALSE}
+```{r setup, warning=FALSE, message=FALSE, echo=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
-library(DT)
 ```
 
 # Introduction
 <br>
-This vignette will walk you through how to connect with data through an API. Specifically, we will look at how to access certain endpoints (tables) as well as how join returned datasets, create new variables, and explore the data.
+This vignette walks through how to connect with data through an API. Specifically, we will look at how to access certain endpoints (tables) as well as how join returned datasets, create new variables, and explore the data.
 <br>
 
 ## Required Packages
@@ -36,7 +34,7 @@ To get started, we'll need to ensure we have the tools installed and loaded into
 <br>
 
 We'll read in the packages using the library() function:
-```{r packages, echo=TRUE}
+```{r packages}
 library(dplyr)
 library(DT)
 library(ggplot2)
@@ -50,10 +48,13 @@ library(knitr)
 <br>
 
 # API Function Calls
-<br>
+The following portion of this vignette provides code to access various endpoints of both the NHL Records and NHL Stats API.
+<br> 
 
-## Return `franchise` data set
-```{r fun1, echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+## Return Franchise data
+The function below, called `fetchFran()`, pulls in some simple franchise data for the NHL, including id, first season, last season, most recent team id, common team name, and teams' place name.
+
+```{r fun1}
 fetchFran <- function(tab) {
   URL <- "https://records.nhl.com/site/api/franchise"
   franGET <- GET(URL)
@@ -65,8 +66,9 @@ fetchFran <- function(tab) {
 }
 ```
 
-## Return `franchise` data by Team Name
-```{r fun2, echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+## Return Franchise data by Team Name
+This function, called `fetchFranName()`, returns franchise data for a specified team. For example, if we wanted to look at the same data as in the above example but only for the Boston Bruins, we would call `fetchFranName(name="Bruins")`. Note: we do not call "Boston Bruins" because the teamCommonName is used as the identifier (this does not include Place Name).
+```{r fun2}
 fetchFranName <- function(tab, name) {
   URL <- "https://records.nhl.com/site/api/franchise"
   franGET <- GET(URL)
@@ -78,8 +80,9 @@ fetchFranName <- function(tab, name) {
 }
 ```
 
-## Return `franchise` data by Team ID
-```{r fun3, echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+## Return Franchise data by Team ID
+This function allows us to return the same data again, this time using Team ID as the identifier. If we again wanted to pull franchise data for the Boston Bruins, we would use their team id (6 in this dataset) as follows: `fetchFranID(id=6)`
+```{r fun3}
 fetchFranID <- function(tab, id) {
   URL <- "https://records.nhl.com/site/api/franchise"
   franGET <- GET(URL)
@@ -91,7 +94,8 @@ fetchFranID <- function(tab, id) {
 }
 ```
 
-## Return `franchise team totals` dataset
+## Return Franchise Team Totals data
+This function returns key franchise totals for including games played, goals for/against, losses and wins by home or away status,  penalty minutes, overall losses and wins, shutouts, and many more. This is a fairly lengthy dataset, so to see a short sample of what this function returns, we could use the function as follows: `head(fetchFranTotal(n))`
 ```{r fun4}
 fetchFranTotal <- function(tab, ...) {
   URL <- "https://records.nhl.com/site/api/franchise-team-totals"
@@ -102,8 +106,6 @@ fetchFranTotal <- function(tab, ...) {
   invisible(franGET_df)
   return(franGET_df)
 }
-
-head(fetchFranTotal(n))
 ```
 
 ## Return `franchise team totals` by Team Name
@@ -134,7 +136,7 @@ fetchFranIDTotal <- function(tab, franID) {
 
 
 ## Return `franchise season records` by Franchise ID
-```{r fun7, echo=TRUE}
+```{r fun7}
 fetchSeasonRecords <- function(ID, ...) {
   URL <- "https://records.nhl.com/site/api/franchise-season-records?cayenneExp=franchiseId="
   ID <- ID
@@ -201,7 +203,7 @@ fetchMultiStats <- GET("https://statsapi.web.nhl.com/api/v1/teams/?stats=statsSi
 ```
 
 ```{r}
-fetchSeasonStats
+str(fetchSeasonStats)
 ```
 
 <br>
