@@ -259,9 +259,8 @@ fetchSkaterRecords <- function(ID, ...) {
 ## Return Team Stats data
 
 Team statistics can be sliced and diced several different ways. The
-following functions can be used to call stats data as delineated
-below:  
-\* fetchRoster(): roster data for all teams  
+following functions can be used to call stats data as delineated below:
+<br> \* fetchRoster(): roster data for all teams  
 \* fetchPersonData(): similar to fetchRoster() but with less
 information.  
 \* fetchNextGame(): Details of upcoming game for a specified team  
@@ -351,7 +350,7 @@ fetchAnyStat <- function(ID, ID2, ID3, season, stat, ...) {
   if (season) {
    rosterBySeason <- fetchRosterBySeason(season="season")
   }
-  if ( ) {
+  if () {
   personData <- fetchPersonData() 
   nextGame <- fetchNextGame()
   lastGame <- fetchLastGame()
@@ -363,10 +362,10 @@ return(list(rosterLess, multiTeams, multiStats, rosterBySeason, personData, next
   
 ```
 
-    ## Error: <text>:14:8: unexpected ')'
+    ## Error: <text>:14:7: unexpected ')'
     ## 13:   }
-    ## 14:   if ( )
-    ##            ^
+    ## 14:   if ()
+    ##           ^
 
 <br>
 
