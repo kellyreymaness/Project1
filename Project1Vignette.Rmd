@@ -8,7 +8,7 @@ output:
     toc_depth: 2
 ---
 
-```{r setup, warning=FALSE, message=FALSE, echo=TRUE}
+```{r setup, warning=FALSE, message=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
@@ -180,22 +180,25 @@ fetchSkaterRecords <- function(ID, ...) {
 
 ## Return Team Stats data
 Team statistics can be sliced and diced several different ways. The following functions can be used to call stats data as delineated below:   
-+ fetchRoster(): roster data for all teams  
-+ fetchPersonData(): similar to fetchRoster() but with less information.  
-+ fetchNextGame(): Details of upcoming game for a specified team  
-+ fetchLastGame(): Details of previous game played for a specified team  
-+ fetchSeasonStats(): Returns seasons stats for all teams  
-+ fetchRosterBySeason(): Returns roster for teams by specifying season  
-+ fetchMultiTeams():Returns stats for multiple specified teams  
-+ fetchMultiStats(): Returns specified stats for all teams  
+* fetchRoster(): roster data for all teams  
+* fetchPersonData(): similar to fetchRoster() but with less information.  
+* fetchNextGame(): Details of upcoming game for a specified team  
+* fetchLastGame(): Details of previous game played for a specified team  
+* fetchSeasonStats(): Returns seasons stats for all teams  
+* fetchRosterBySeason(): Returns roster for teams by specifying season  
+* fetchMultiTeams():Returns stats for multiple specified teams  
+* fetchMultiStats(): Returns specified stats for all teams  
 <br>
 
 ```{r fun10, echo=TRUE, error=TRUE, warning=FALSE, message=FALSE}
-fetchRosterLess <- function(ID=NULL, ...) {GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/", ID, "/roster")) %>% content("text") %>% fromJSON(flatten=TRUE)
+fetchRosterLess <- function(ID=NULL, ...) { 
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/", ID, "/roster")) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 
 
-fetchPersonData <- function(...) {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=person.names") %>% content("text") %>% fromJSON(flatten=TRUE)
+fetchPersonData <- function(...) {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=person.names") 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 
 
@@ -215,29 +218,56 @@ fetchLastGame <- function(...) {
 }
 
 
-fetchSeasonStats <- function() {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=?expand=team.stats") %>% content("text") %>% fromJSON(flatten=TRUE)
+fetchSeasonStats <- function() {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=?expand=team.stats") 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 
 
 fetchRosterBySeason <- function(season=NULL, ...) {
-  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.roster&season=", season)) %>% content("text") %>% fromJSON(flatten=TRUE)}
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.roster&season=", season)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
+}
 
 
 fetchMultiTeams <- function(ID=NULL, ID2=NULL, ID3=NULL, ...) {
-  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?teamId=", ID, ",", ID2, ",", ID3)) %>% content("text") %>% fromJSON(flatten=TRUE)
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?teamId=", ID, ",", ID2, ",", ID3)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 
 
 fetchMultiStats <- function(stat=NULL, ...) {
-  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?stats=stats", stat)) %>% content("text") %>% fromJSON(flatten=TRUE)
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?stats=stats", stat)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 ```
 <br>
 
 ## Wrapper function
-This wrapper function is meant to be applied in order to use any of the above writter functions for calling the records and stats API. 
+The wrapper function is meant to be applied in order to use any of the above written functions for calling the stats API.
 ```{r wrap, echo=TRUE, error=TRUE, warning=FALSE, message=FALSE}
-
+fetchAnyStat <- function(ID, ID2, ID3, season, stat, ...) {
+  if (ID) { 
+   rosterLess <- fetchRosterLess(ID="ID")
+  }
+  if (ID && ID2 && ID3) {
+   multiTeams <- fetchMultiTeams(ID="ID", ID2="ID2", ID3="ID3")  
+  }
+  if (stat) {
+    multiStats <- fetchMultiStats(stat="stat")
+  }
+  if (season) {
+   rosterBySeason <- fetchRosterBySeason(season="season")
+  }
+  if ( ) {
+  personData <- fetchPersonData() 
+  nextGame <- fetchNextGame()
+  lastGame <- fetchLastGame()
+  seasonStats <- fetchSeasonStats()
+  }
+  
+return(list(rosterLess, multiTeams, multiStats, rosterBySeason, personData, nextGame, lastGame, seasonStats))
+}
+  
 ```
 
 <br>
@@ -292,7 +322,8 @@ canSkateRec <- as.data.frame(canadiensSkaterRec)
 
 summByPosition <- function(position) {
   data <- canSkateRec %>% filter(data.positionCode==position) %>% select(data.assists, data.goals)
-  kable(apply(data, 2, summary), col.names=c("Assists", "Goals"), caption = paste0("Historical Summary of Assists & Goals Scored by Position=", position, " for the Montreal Canadiens"))
+  kable(apply(data, 2, summary), col.names=c("Assists", "Goals"), 
+    caption = paste0("Historical Summary of Assists & Goals Scored by Position=", position, " for the Montreal Canadiens"))
 }
 
 summByPosition("R")
@@ -302,10 +333,8 @@ summByPosition("D")
 ```
 <br>
 
-<br>
-
 ## Summarizing Categorical Data
-<br>
+
 Working with the franchise records data and the new variable `franAge` created previously, I have created a contingency table below that shows the frequency of franchises by age classification (either Oldest or Newest). Newest franchises are more frequent by almost double that of Oldest franchises, however, that data is somewhat misleading. Each franchise appears twice in the dataset based on type of season. See more below. 
 ```{r catsumm1, echo=TRUE, error=TRUE, warning=FALSE, message=FALSE}
 kable(table(franData$franAge))
@@ -319,26 +348,30 @@ kable(table(franData$franAge, franData$data.gameTypeId), col.names = c("Regular 
 ```
 
 <br>
-#Graphing
-<br>
+
+# Graphing
 
 ## Boxplot: Winning Percentage by Franchise Age
 The visual below shows boxplots of winning percentage by franchise age classification. The plots reveal that the newest franchises have greater variability in winning percentage than teams classified "Oldest".
 ```{r boxplot1, echo=TRUE, error=TRUE, warning=FALSE, message=FALSE}
-ggplot(franData, aes(x = franAge, y = winPct)) + geom_boxplot() + geom_jitter(aes(color=franAge)) + ggtitle("Boxplot of Winning Percentage by Franchise Age") + ylab("Winning Percentage") + xlab("Franchise Age Classification")
+ggplot(franData, aes(x = franAge, y = winPct)) + geom_boxplot() + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Boxplot of Winning Percentage by Franchise Age") + ylab("Winning Percentage") + 
+  xlab("Franchise Age Classification")
 ```
 <br>
 
 ## Scatterplot: Total Wins v. Road Wins
 The overarching purpose of the scatterplot below is to compares total wins and road wins. We can see a vey strong, positive linear association between these two variables, which I expected. Winning games away from home is generally more challenging that in front of a friendly home crowd so I expected as the road wins increased, so too would oveall wins and the success of the franchise. I also a color grouping so that we can see the age of franchises. In this case, the major insight to be drawn from this is that the oldest franchises tend to have the overall most wins -- which again makes sense because older teams have been playing longer and simply have the opportunity to win more games than newer franchises. 
 ```{r scatter, echo=TRUE, error=TRUE, warning=FALSE, message=FALSE}
-ggplot(franData, aes(x = data.wins, y = data.roadWins)) + geom_jitter(aes(color=franAge)) + ggtitle("Scatterplot of Total Wins vs. Road Wins") + ylab("Wins on the Road") + xlab("Total Wins")
+ggplot(franData, aes(x = data.wins, y = data.roadWins)) + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Scatterplot of Total Wins vs. Road Wins") + ylab("Wins on the Road") + xlab("Total Wins")
 ```
 <br>
 ## Scatterplot: Total Losses vs. Total Penalty Minutes
 The scatterplot below shows total losses compared to total penalty minutes by franchise. This has a moderately strong positive linear association, though not quite as strong as the relationship seen in the previous plot. I expected this correlation given that players in penalty boxes generally give their team a disadvantage by allowing the other team a power play (unless of course the other team is penalized similarly at the exact same time and thus may experience more losses. Time does look to play a role here. We see the oldest franchises again having a higher number of penalty minutes and a higher number of losses, which again make sense because they have simply have longer (i.e more opportunity) to experience those things ove newer franchises. 
 ```{r scatter2, echo=TRUE, error=TRUE, warning=FALSE, message=FALSE}
-ggplot(franData, aes(x = data.losses, y = data.penaltyMinutes, group=franAge)) + geom_jitter(aes(color=franAge)) + ggtitle("Scatterplot of Total Losses vs. Penalty Minutes") + ylab("Total Penalty Minutes") + xlab("Total Losses")
+ggplot(franData, aes(x = data.losses, y = data.penaltyMinutes, group=franAge)) + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Scatterplot of Total Losses vs. Penalty Minutes") + ylab("Total Penalty Minutes") + xlab("Total Losses")
 ```
 
 <br>
@@ -348,12 +381,14 @@ The histogram below shows the frequency of seasons played by goalies for the Van
 vanGoalieData <- fetchGoalieRecords(ID=20)
 vanGoalieData <- vanGoalieData[[1]][26]
 
-ggplot(vanGoalieData, aes(x=seasons)) + geom_histogram(bins=10) + ggtitle("Histogram of Seasons Played by Vancouver Canucks Goalies") + xlab("Seasons Played")
+ggplot(vanGoalieData, aes(x=seasons)) + geom_histogram(bins=10) + 
+  ggtitle("Histogram of Seasons Played by Vancouver Canucks Goalies") + xlab("Seasons Played")
 ```
 <br>
 
 ## Barplot
 Using skater data from the Montreal Canadiens that we looked at earlier, I've developed a barplot to show the count of max goals scored in one game broken down by position. We see defensemen showing high counts for both zero and one goal max per game, which makes sense since it isn't their primary job to score. As the max number of goals per game increases, we see the counts for defensive positions fall off significantly. Counts for offensive positions at all available max goals is similar for zero to two goals max and begins to decline moderatly from there as we look from left to right across the barplot. Centers was the only position to register 6 goals max per game (the largest per game total recorded for the Canadiens).
 ```{r barplot, echo=TRUE, error=TRUE, warning=FALSE, message=FALSE}
-ggplot(canSkateRec, aes(x=data.mostGoalsOneGame)) + geom_bar(aes(fill=data.positionCode), position="dodge") + scale_fill_discrete("Position") + xlab("Max Goals in One Game") + ggtitle("Barplot of Max Goals/Game by Position")
+ggplot(canSkateRec, aes(x=data.mostGoalsOneGame)) + geom_bar(aes(fill=data.positionCode), position="dodge") + 
+  scale_fill_discrete("Position") + xlab("Max Goals in One Game") + ggtitle("Barplot of Max Goals/Game by Position")
 ```

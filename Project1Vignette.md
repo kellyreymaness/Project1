@@ -1,0 +1,656 @@
+Project 1 Vignette: Reading In and Exploring Data via an API
+================
+Kelly Baker
+9/10/2020
+
+  - [Introduction](#introduction)
+      - [Required Packages](#required-packages)
+  - [API Function Calls](#api-function-calls)
+      - [Return Franchise data](#return-franchise-data)
+      - [Return Franchise data by Team
+        Name](#return-franchise-data-by-team-name)
+      - [Return Franchise data by Team
+        ID](#return-franchise-data-by-team-id)
+      - [Return Franchise Team Totals
+        data](#return-franchise-team-totals-data)
+      - [Return Franchise Team Totals by Team
+        Name](#return-franchise-team-totals-by-team-name)
+      - [Return Franchise Team Totals by Franchise
+        ID](#return-franchise-team-totals-by-franchise-id)
+      - [Return Franchise Season Records by Franchise
+        ID](#return-franchise-season-records-by-franchise-id)
+      - [Return Goalie Records by Franchise
+        ID](#return-goalie-records-by-franchise-id)
+      - [Return Skater Records by Franchise
+        ID](#return-skater-records-by-franchise-id)
+      - [Return Team Stats data](#return-team-stats-data)
+      - [Wrapper function](#wrapper-function)
+  - [Data Manipulation](#data-manipulation)
+      - [Joins](#joins)
+      - [Creating New Variables](#creating-new-variables)
+  - [Data Exploration & Visualization](#data-exploration-visualization)
+      - [Summarizing Numeric Data](#summarizing-numeric-data)
+      - [Summarizing Categorical Data](#summarizing-categorical-data)
+  - [Graphing](#graphing)
+      - [Boxplot: Winning Percentage by Franchise
+        Age](#boxplot-winning-percentage-by-franchise-age)
+      - [Scatterplot: Total Wins v. Road
+        Wins](#scatterplot-total-wins-v.-road-wins)
+      - [Barplot](#barplot)
+
+# Introduction
+
+<br> This vignette walks through how to connect with data through an
+API. Specifically, we will look at how to access certain endpoints
+(tables) as well as how join returned datasets, create new variables,
+and explore the data. <br>
+
+## Required Packages
+
+<br> To get started, we’ll need to ensure we have the tools installed
+and loaded into RStudio to read in, manipulate, summarize, and plot the
+data. Below is an outline of packages that are required to for this
+project: <br>
+
+  - **dplyr**: for data manipulation
+  - **ggplot2**: for plotting and graphing
+  - **readr**: for reading in data
+  - **tibble**: for creating special data frames with improved printing
+    properties
+  - **tidyr**: for reshaping data
+  - **jsonlite**: for parsing API data
+  - **httr**: for streaming data from an API
+  - **knitr**: for creating tables with nic printing properties <br>
+
+We’ll read in the packages using the library() function:
+
+``` r
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(tibble)
+library(tidyr)
+library(jsonlite)
+library(httr)
+library(knitr)
+```
+
+<br>
+
+# API Function Calls
+
+The following portion of this vignette provides code to access various
+endpoints of both the NHL Records and NHL Stats API. <br>
+
+## Return Franchise data
+
+The function below, called `fetchFran()`, pulls in some simple franchise
+data for the NHL, including id, first season, last season, most recent
+team id, common team name, and teams’ place name.
+
+``` r
+fetchFran <- function(tab) {
+  URL <- "https://records.nhl.com/site/api/franchise"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df)
+}
+```
+
+## Return Franchise data by Team Name
+
+This function, called `fetchFranName()`, returns franchise data for a
+specified team. For example, if we wanted to look at the same data as in
+the above example but only for the Boston Bruins, we would call
+`fetchFranName(name="Bruins")`. Note: we do not call “Boston Bruins”
+because the teamCommonName is used as the identifier (this does not
+include Place Name).
+
+``` r
+fetchFranName <- function(tab, name) {
+  URL <- "https://records.nhl.com/site/api/franchise"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df %>% filter(data.teamCommonName==name))
+}
+```
+
+## Return Franchise data by Team ID
+
+This function allows us to return the same data again, this time using
+Team ID as the identifier. If we again wanted to pull franchise data for
+the Boston Bruins, we would use their team id (6 in this dataset) as
+follows: `fetchFranID(id=6)`
+
+``` r
+fetchFranID <- function(tab, id) {
+  URL <- "https://records.nhl.com/site/api/franchise"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df %>% filter(data.id==id))
+}
+```
+
+## Return Franchise Team Totals data
+
+This function returns key franchise totals for including games played,
+goals for/against, losses and wins by home or away status, penalty
+minutes, overall losses and wins, shutouts, and many more. This is a
+fairly lengthy dataset, so to see a short sample of what this function
+returns, we could use the function as follows: `head(fetchFranTotal(n))`
+
+``` r
+fetchFranTotal <- function(tab, ...) {
+  URL <- "https://records.nhl.com/site/api/franchise-team-totals"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df)
+}
+```
+
+## Return Franchise Team Totals by Team Name
+
+This function returns the same data as the function above but for a
+specified team. For example, to call teams totals for the Montreal
+Canucks, we code `fetchFranNameTotal(name="Vancouver Canucks")`. (Note:
+in this function, the name input requires both the place and team name).
+
+``` r
+fetchFranNameTotal <- function(tab, name) {
+  URL <- "https://records.nhl.com/site/api/franchise-team-totals"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df %>% filter(data.teamName==name))
+}
+```
+
+## Return Franchise Team Totals by Franchise ID
+
+This function returns the same information above, but uses franchise ID
+as the specifying criteria instead of name. To pull team totals for the
+NY Rangers, we’d use the following code: `fetchFranIDTotal(franID="10")`
+
+``` r
+fetchFranIDTotal <- function(tab, franID) {
+  URL <- "https://records.nhl.com/site/api/franchise-team-totals"
+  franGET <- GET(URL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  franGET_df <- as.data.frame(franGET_json)
+  invisible(franGET_df)
+  return(franGET_df %>% filter(data.franchiseId==franID))
+}
+```
+
+## Return Franchise Season Records by Franchise ID
+
+The fetchSeasonRecords() function below returns season high data such as
+season with most goals against, season of most losses, most penalty
+minutes in a season, home point streak, any many more. As an example,
+this data can be called for the Detroit Red Wings by specifying ID=12 as
+follows: `fetchSeasonRecords(ID="12")`
+
+``` r
+fetchSeasonRecords <- function(ID, ...) {
+  URL <- "https://records.nhl.com/site/api/franchise-season-records?cayenneExp=franchiseId="
+  ID <- ID
+  fullURL <- paste0(URL,ID)
+  franGET <- GET(fullURL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  return(franGET_json)
+}
+```
+
+## Return Goalie Records by Franchise ID
+
+This function returns data on goalies by team ID including name, game
+type played in, number of games played, number of losses, number of
+wins, number of seasons played with team, and more. As an example,
+pulling this data for the Toronto Maple Leafs would be done with the
+following code: `fetchGoalieRecords(ID="5")`.
+
+``` r
+fetchGoalieRecords <- function(ID, ...) { 
+  URL <- "https://records.nhl.com/site/api/franchise-goalie-records?cayenneExp=franchiseId="
+  ID <- ID
+  fullURL <- paste0(URL,ID)
+  franGET <- GET(fullURL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  return(franGET_json)
+}
+```
+
+## Return Skater Records by Franchise ID
+
+Skater records, including number of penalty minutes, goals, assists,
+games played, position played, and more is available by franchise ID. To
+pull this data for the Maple Leafs, we’d use the following code:
+`fetchSkaterRecords(ID="5")`
+
+``` r
+fetchSkaterRecords <- function(ID, ...) {
+  URL <- "https://records.nhl.com/site/api/franchise-skater-records?cayenneExp=franchiseId="
+  ID <- ID
+  fullURL <- paste0(URL,ID)
+  franGET <- GET(fullURL)
+  franGET_text <- content(franGET, "text")
+  franGET_json <- fromJSON(franGET_text, flatten=TRUE)
+  return(franGET_json)
+}
+```
+
+## Return Team Stats data
+
+Team statistics can be sliced and diced several different ways. The
+following functions can be used to call stats data as delineated
+below:  
+\* fetchRoster(): roster data for all teams  
+\* fetchPersonData(): similar to fetchRoster() but with less
+information.  
+\* fetchNextGame(): Details of upcoming game for a specified team  
+\* fetchLastGame(): Details of previous game played for a specified
+team  
+\* fetchSeasonStats(): Returns seasons stats for all teams  
+\* fetchRosterBySeason(): Returns roster for teams by specifying
+season  
+\* fetchMultiTeams():Returns stats for multiple specified teams  
+\* fetchMultiStats(): Returns specified stats for all teams  
+<br>
+
+``` r
+fetchRosterLess <- function(ID=NULL, ...) { 
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/", ID, "/roster")) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
+}
+
+
+fetchPersonData <- function(...) {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=person.names") 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
+}
+
+
+fetchNextGame <- function(...) {
+  nextGameData <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.schedule.next")
+  nextGameText <- content(nextGameData, "text")
+  nextGameJSON <- fromJSON(nextGameText, flatten=TRUE)
+  return(nextGameJSON[2])
+}
+
+
+fetchLastGame <- function(...) {
+  lastGameData <- GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=?expand=team.schedule.previous")
+  lastGameText <- content(lastGameData, "text")
+  lastGameJSON <- fromJSON(lastGameText, flatten=TRUE)
+  return(lastGameJSON[2])
+}
+
+
+fetchSeasonStats <- function() {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=?expand=team.stats") 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
+}
+
+
+fetchRosterBySeason <- function(season=NULL, ...) {
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.roster&season=", season)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
+}
+
+
+fetchMultiTeams <- function(ID=NULL, ID2=NULL, ID3=NULL, ...) {
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?teamId=", ID, ",", ID2, ",", ID3)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
+}
+
+
+fetchMultiStats <- function(stat=NULL, ...) {
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?stats=stats", stat)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
+}
+```
+
+    ## Error: <text>:3:3: unexpected SPECIAL
+    ## 2:   GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/", ID, "/roster")) 
+    ## 3:   %>%
+    ##      ^
+
+<br>
+
+## Wrapper function
+
+The wrapper function is meant to be applied in order to use any of the
+above written functions for calling the stats API.
+
+``` r
+fetchAnyStat <- function(ID, ID2, ID3, season, stat, ...) {
+  if (ID) { 
+   rosterLess <- fetchRosterLess(ID="ID")
+  }
+  if (ID && ID2 && ID3) {
+   multiTeams <- fetchMultiTeams(ID="ID", ID2="ID2", ID3="ID3")  
+  }
+  if (stat) {
+    multiStats <- fetchMultiStats(stat="stat")
+  }
+  if (season) {
+   rosterBySeason <- fetchRosterBySeason(season="season")
+  }
+  if ( ) {
+  personData <- fetchPersonData() 
+  nextGame <- fetchNextGame()
+  lastGame <- fetchLastGame()
+  seasonStats <- fetchSeasonStats()
+  }
+  
+return(list(rosterLess, multiTeams, multiStats, rosterBySeason, personData, nextGame, lastGame, seasonStats))
+}
+  
+```
+
+    ## Error: <text>:14:8: unexpected ')'
+    ## 13:   }
+    ## 14:   if ( )
+    ##            ^
+
+<br>
+
+# Data Manipulation
+
+<br>
+
+## Joins
+
+<br> In order to better assess the data, I’d like to combine relevant
+data sets. For example, I might want to see a team’s Skater Records and
+Goalie Records in one dataset. The code provided below does this for the
+Montreal Canadiens. Using the fetchGoalieRecords() function, I pull the
+Canadiens goalie records and save in a new object, canGoalieData. This
+is a list, so I’ll need to convert to a data frame first in order to use
+in my join. Similarly, I’ve pulled the Canadien’s Skater Records as well
+(object: canSkateRec). Reviewing the data sets, I see many of the same
+variable (column) names, but many different ones as well. I’ve opted to
+use a full join in order to preserve all unique variables of each data
+set. This join is saved in a new object called joinedData. <br> I’ve
+suppressed the output in markdown, but inspecting this joined data
+reveals 825 rows and 29 columns. This validates that the join worked as
+the goalie dataset have 37 rows and the skater data set had 788 rows.
+
+``` r
+canGoalieRec <- fetchGoalieRecords(ID="1") 
+canGoalieRec <- canGoalieRec %>% as.data.frame()## 37 rows, 29 columns
+canadiensSkaterRec <- fetchSkaterRecords(ID=1)
+canSkateRec <- as.data.frame(canadiensSkaterRec) ##has 788 rows, 31 vars
+
+joinedData <- full_join(canGoalieRec, canSkateRec)
+joinedData
+```
+
+## Creating New Variables
+
+<br> Pulling in franchise data using the fetchFranTotal() function, I
+filtered the dataset to only include active franchises then put in order
+of first season. From here, I cut the data into 2 chunks representing
+franchises more than 50 years old (“Oldest”) and team less then 50 years
+old (“Newest”).
+
+``` r
+franData <- fetchFranTotal() %>% filter(data.activeFranchise==1) %>% arrange(data.firstSeasonId)
+franData <- franData %>% as_tibble() %>% 
+  mutate(franAge = ifelse(franData$data.firstSeasonId >= 19701971, "Newest", "Oldest"))
+```
+
+<br> I thought it would also be nice to look at this dataset and be able
+to quickly ascertain what the win percentage was for each team. In order
+to accomplish this, I created the variable `winPct` that reflects total
+wins divided by total games played. This is a particularly interesting
+variable and reveals much even in table form. After sorting by `winPct`,
+one can quickly glimpse the winningest franchises in hockey history.
+
+``` r
+franData <- franData %>% as_tibble() %>% mutate(winPct = (data.wins)/(data.gamesPlayed)) %>% arrange(desc(winPct))
+```
+
+# Data Exploration & Visualization
+
+## Summarizing Numeric Data
+
+<br> The tables below provide some basic numeric summarization using
+data from one of hockey’s most storied franchises: the Montreal
+Canadiens. I’ve pulled in Skater Records using our fetchSkaterRecords()
+function, setting ID=1, to get started. Because this data is in list
+form, I will convert it to a data frame. Next, I’ve written code to
+create a basic five number summary of assists and goals by skater
+position. Because I’ll need to generate tables across four positions
+(listed below), I created a function called summByPosition() to help
+automate this process.  
+\* R - right wing;  
+\* C - center;  
+\* L - left wing;  
+\* D - defensemen  
+<br> The tables generated reveal that right wing(R), left wing(L) and
+centers(C) score, on average, higher than defensemen (D). This aligns
+with what I would’ve expected given the fact that offensive positions
+are tasked with being a team’s primary scorers, while defensive
+positions are not. I was somewhat surprised to see that, though defense
+trails offense in assists on average, that it wasn’t by much when
+comparing left wingers to defensemen.
+
+``` r
+canadiensSkaterRec <- fetchSkaterRecords(ID=1)
+canSkateRec <- as.data.frame(canadiensSkaterRec)
+
+summByPosition <- function(position) {
+  data <- canSkateRec %>% filter(data.positionCode==position) %>% select(data.assists, data.goals)
+  kable(apply(data, 2, summary), col.names=c("Assists", "Goals"), 
+    caption = paste0("Historical Summary of Assists & Goals Scored by Position=", position, " for the Montreal Canadiens"))
+}
+
+summByPosition("R")
+```
+
+|         |   Assists |     Goals |
+| ------- | --------: | --------: |
+| Min.    |   0.00000 |   0.00000 |
+| 1st Qu. |   1.00000 |   0.00000 |
+| Median  |   6.00000 |   6.00000 |
+| Mean    |  40.67251 |  36.12281 |
+| 3rd Qu. |  33.50000 |  28.00000 |
+| Max.    | 728.00000 | 544.00000 |
+
+Historical Summary of Assists & Goals Scored by Position=R for the
+Montreal Canadiens
+
+``` r
+summByPosition("C")
+```
+
+|         |   Assists |     Goals |
+| ------- | --------: | --------: |
+| Min.    |   0.00000 |   0.00000 |
+| 1st Qu. |   1.00000 |   0.00000 |
+| Median  |   7.00000 |   4.00000 |
+| Mean    |  50.32821 |  33.72308 |
+| 3rd Qu. |  40.00000 |  25.00000 |
+| Max.    | 712.00000 | 507.00000 |
+
+Historical Summary of Assists & Goals Scored by Position=C for the
+Montreal Canadiens
+
+``` r
+summByPosition("L")
+```
+
+|         |   Assists |     Goals |
+| ------- | --------: | --------: |
+| Min.    |   0.00000 |   0.00000 |
+| 1st Qu. |   1.00000 |   0.00000 |
+| Median  |   7.00000 |   6.00000 |
+| Mean    |  41.03955 |  33.98305 |
+| 3rd Qu. |  44.00000 |  38.00000 |
+| Max.    | 369.00000 | 408.00000 |
+
+Historical Summary of Assists & Goals Scored by Position=L for the
+Montreal Canadiens
+
+``` r
+summByPosition("D")
+```
+
+|         |  Assists |     Goals |
+| ------- | -------: | --------: |
+| Min.    |   0.0000 |   0.00000 |
+| 1st Qu. |   1.0000 |   0.00000 |
+| Median  |   6.0000 |   1.00000 |
+| Mean    |  36.3551 |  11.44082 |
+| 3rd Qu. |  32.0000 |  11.00000 |
+| Max.    | 686.0000 | 197.00000 |
+| <br>    |          |           |
+
+Historical Summary of Assists & Goals Scored by Position=D for the
+Montreal Canadiens
+
+## Summarizing Categorical Data
+
+Working with the franchise records data and the new variable `franAge`
+created previously, I have created a contingency table below that shows
+the frequency of franchises by age classification (either Oldest or
+Newest). Newest franchises are more frequent by almost double that of
+Oldest franchises, however, that data is somewhat misleading. Each
+franchise appears twice in the dataset based on type of season. See more
+below.
+
+``` r
+kable(table(franData$franAge))
+```
+
+| Var1   | Freq |
+| :----- | ---: |
+| Newest |   57 |
+| Oldest |   30 |
+
+<br> Adding a second variable, `gameTypeId`, we get a two way
+contingency table that shows the frequency of franchises by age status
+and season type. This table tells us that there are 15 teams classified
+as “Oldest” and all teams with that classification have had a regular
+season and a post season in hockey history. However, the Newest
+franchises appears to have 29 teams classified as such, with one team
+not ever having had a post-season. <br>
+
+``` r
+kable(table(franData$franAge, franData$data.gameTypeId), col.names = c("Regular Season", "Playoffs"))
+```
+
+|        | Regular Season | Playoffs |
+| ------ | -------------: | -------: |
+| Newest |             29 |       28 |
+| Oldest |             15 |       15 |
+
+<br>
+
+# Graphing
+
+## Boxplot: Winning Percentage by Franchise Age
+
+The visual below shows boxplots of winning percentage by franchise age
+classification. The plots reveal that the newest franchises have greater
+variability in winning percentage than teams classified “Oldest”.
+
+``` r
+ggplot(franData, aes(x = franAge, y = winPct)) + geom_boxplot() + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Boxplot of Winning Percentage by Franchise Age") + ylab("Winning Percentage") + 
+  xlab("Franchise Age Classification")
+```
+
+![](Project1Vignette_files/figure-gfm/boxplot1-1.png)<!-- --> <br>
+
+## Scatterplot: Total Wins v. Road Wins
+
+The overarching purpose of the scatterplot below is to compares total
+wins and road wins. We can see a vey strong, positive linear association
+between these two variables, which I expected. Winning games away from
+home is generally more challenging that in front of a friendly home
+crowd so I expected as the road wins increased, so too would oveall wins
+and the success of the franchise. I also a color grouping so that we can
+see the age of franchises. In this case, the major insight to be drawn
+from this is that the oldest franchises tend to have the overall most
+wins – which again makes sense because older teams have been playing
+longer and simply have the opportunity to win more games than newer
+franchises.
+
+``` r
+ggplot(franData, aes(x = data.wins, y = data.roadWins)) + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Scatterplot of Total Wins vs. Road Wins") + ylab("Wins on the Road") + xlab("Total Wins")
+```
+
+![](Project1Vignette_files/figure-gfm/scatter-1.png)<!-- --> <br> \#\#
+Scatterplot: Total Losses vs. Total Penalty Minutes The scatterplot
+below shows total losses compared to total penalty minutes by franchise.
+This has a moderately strong positive linear association, though not
+quite as strong as the relationship seen in the previous plot. I
+expected this correlation given that players in penalty boxes generally
+give their team a disadvantage by allowing the other team a power play
+(unless of course the other team is penalized similarly at the exact
+same time and thus may experience more losses. Time does look to play a
+role here. We see the oldest franchises again having a higher number of
+penalty minutes and a higher number of losses, which again make sense
+because they have simply have longer (i.e more opportunity) to
+experience those things ove newer franchises.
+
+``` r
+ggplot(franData, aes(x = data.losses, y = data.penaltyMinutes, group=franAge)) + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Scatterplot of Total Losses vs. Penalty Minutes") + ylab("Total Penalty Minutes") + xlab("Total Losses")
+```
+
+![](Project1Vignette_files/figure-gfm/scatter2-1.png)<!-- -->
+
+<br> \#\# Histogram: Frequency of Seasons Played by Vancouver Canucks
+Goalies The histogram below shows the frequency of seasons played by
+goalies for the Vancouver Canucks. The distribution is right skewed
+revealing that goalies most frequently play 1 to 2 seasons.
+
+``` r
+vanGoalieData <- fetchGoalieRecords(ID=20)
+vanGoalieData <- vanGoalieData[[1]][26]
+
+ggplot(vanGoalieData, aes(x=seasons)) + geom_histogram(bins=10) + 
+  ggtitle("Histogram of Seasons Played by Vancouver Canucks Goalies") + xlab("Seasons Played")
+```
+
+![](Project1Vignette_files/figure-gfm/hist-1.png)<!-- --> <br>
+
+## Barplot
+
+Using skater data from the Montreal Canadiens that we looked at earlier,
+I’ve developed a barplot to show the count of max goals scored in one
+game broken down by position. We see defensemen showing high counts for
+both zero and one goal max per game, which makes sense since it isn’t
+their primary job to score. As the max number of goals per game
+increases, we see the counts for defensive positions fall off
+significantly. Counts for offensive positions at all available max goals
+is similar for zero to two goals max and begins to decline moderatly
+from there as we look from left to right across the barplot. Centers was
+the only position to register 6 goals max per game (the largest per game
+total recorded for the Canadiens).
+
+``` r
+ggplot(canSkateRec, aes(x=data.mostGoalsOneGame)) + geom_bar(aes(fill=data.positionCode), position="dodge") + 
+  scale_fill_discrete("Position") + xlab("Max Goals in One Game") + ggtitle("Barplot of Max Goals/Game by Position")
+```
+
+![](Project1Vignette_files/figure-gfm/barplot-1.png)<!-- -->
