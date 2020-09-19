@@ -31,15 +31,12 @@ Kelly Baker
   - [Data Exploration & Visualization](#data-exploration-visualization)
       - [Summarizing Numeric Data](#summarizing-numeric-data)
       - [Summarizing Categorical Data](#summarizing-categorical-data)
+  - [Graphing](#graphing)
       - [Boxplot: Winning Percentage by Franchise
         Age](#boxplot-winning-percentage-by-franchise-age)
       - [Scatterplot: Total Wins v. Road
         Wins](#scatterplot-total-wins-v.-road-wins)
       - [Barplot](#barplot)
-
-``` r
-knitr::opts_chunk$set(echo = FALSE)
-```
 
 # Introduction
 
@@ -264,25 +261,28 @@ fetchSkaterRecords <- function(ID, ...) {
 Team statistics can be sliced and diced several different ways. The
 following functions can be used to call stats data as delineated
 below:  
-\+ fetchRoster(): roster data for all teams  
-\+ fetchPersonData(): similar to fetchRoster() but with less
+\* fetchRoster(): roster data for all teams  
+\* fetchPersonData(): similar to fetchRoster() but with less
 information.  
-\+ fetchNextGame(): Details of upcoming game for a specified team  
-\+ fetchLastGame(): Details of previous game played for a specified
+\* fetchNextGame(): Details of upcoming game for a specified team  
+\* fetchLastGame(): Details of previous game played for a specified
 team  
-\+ fetchSeasonStats(): Returns seasons stats for all teams  
-\+ fetchRosterBySeason(): Returns roster for teams by specifying
+\* fetchSeasonStats(): Returns seasons stats for all teams  
+\* fetchRosterBySeason(): Returns roster for teams by specifying
 season  
-\+ fetchMultiTeams():Returns stats for multiple specified teams  
-\+ fetchMultiStats(): Returns specified stats for all teams  
+\* fetchMultiTeams():Returns stats for multiple specified teams  
+\* fetchMultiStats(): Returns specified stats for all teams  
 <br>
 
 ``` r
-fetchRosterLess <- function(ID=NULL, ...) {GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/", ID, "/roster")) %>% content("text") %>% fromJSON(flatten=TRUE)
+fetchRosterLess <- function(ID=NULL, ...) { 
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/", ID, "/roster")) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 
 
-fetchPersonData <- function(...) {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=person.names") %>% content("text") %>% fromJSON(flatten=TRUE)
+fetchPersonData <- function(...) {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=person.names") 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 
 
@@ -302,30 +302,71 @@ fetchLastGame <- function(...) {
 }
 
 
-fetchSeasonStats <- function() {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=?expand=team.stats") %>% content("text") %>% fromJSON(flatten=TRUE)
+fetchSeasonStats <- function() {GET("https://statsapi.web.nhl.com/api/v1/teams/?expand=?expand=team.stats") 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 
 
 fetchRosterBySeason <- function(season=NULL, ...) {
-  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.roster&season=", season)) %>% content("text") %>% fromJSON(flatten=TRUE)}
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?expand=team.roster&season=", season)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
+}
 
 
 fetchMultiTeams <- function(ID=NULL, ID2=NULL, ID3=NULL, ...) {
-  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?teamId=", ID, ",", ID2, ",", ID3)) %>% content("text") %>% fromJSON(flatten=TRUE)
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?teamId=", ID, ",", ID2, ",", ID3)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 
 
 fetchMultiStats <- function(stat=NULL, ...) {
-  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?stats=stats", stat)) %>% content("text") %>% fromJSON(flatten=TRUE)
+  GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/?stats=stats", stat)) 
+  %>% content("text") %>% fromJSON(flatten=TRUE)
 }
 ```
+
+    ## Error: <text>:3:3: unexpected SPECIAL
+    ## 2:   GET(paste0("https://statsapi.web.nhl.com/api/v1/teams/", ID, "/roster")) 
+    ## 3:   %>%
+    ##      ^
 
 <br>
 
 ## Wrapper function
 
-This wrapper function is meant to be applied in order to use any of the
-above writter functions for calling the records and stats API.
+The wrapper function is meant to be applied in order to use any of the
+above written functions for calling the stats API.
+
+``` r
+fetchAnyStat <- function(ID, ID2, ID3, season, stat, ...) {
+  if (ID) { 
+   rosterLess <- fetchRosterLess(ID="ID")
+  }
+  if (ID && ID2 && ID3) {
+   multiTeams <- fetchMultiTeams(ID="ID", ID2="ID2", ID3="ID3")  
+  }
+  if (stat) {
+    multiStats <- fetchMultiStats(stat="stat")
+  }
+  if (season) {
+   rosterBySeason <- fetchRosterBySeason(season="season")
+  }
+  if ( ) {
+  personData <- fetchPersonData() 
+  nextGame <- fetchNextGame()
+  lastGame <- fetchLastGame()
+  seasonStats <- fetchSeasonStats()
+  }
+  
+return(list(rosterLess, multiTeams, multiStats, rosterBySeason, personData, nextGame, lastGame, seasonStats))
+}
+  
+```
+
+    ## Error: <text>:14:8: unexpected ')'
+    ## 13:   }
+    ## 14:   if ( )
+    ##            ^
 
 <br>
 
@@ -416,7 +457,8 @@ canSkateRec <- as.data.frame(canadiensSkaterRec)
 
 summByPosition <- function(position) {
   data <- canSkateRec %>% filter(data.positionCode==position) %>% select(data.assists, data.goals)
-  kable(apply(data, 2, summary), col.names=c("Assists", "Goals"), caption = paste0("Historical Summary of Assists & Goals Scored by Position=", position, " for the Montreal Canadiens"))
+  kable(apply(data, 2, summary), col.names=c("Assists", "Goals"), 
+    caption = paste0("Historical Summary of Assists & Goals Scored by Position=", position, " for the Montreal Canadiens"))
 }
 
 summByPosition("R")
@@ -483,17 +525,15 @@ summByPosition("D")
 Historical Summary of Assists & Goals Scored by Position=D for the
 Montreal Canadiens
 
-<br>
-
 ## Summarizing Categorical Data
 
-<br> Working with the franchise records data and the new variable
-`franAge` created previously, I have created a contingency table below
-that shows the frequency of franchises by age classification (either
-Oldest or Newest). Newest franchises are more frequent by almost double
-that of Oldest franchises, however, that data is somewhat misleading.
-Each franchise appears twice in the dataset based on type of season. See
-more below.
+Working with the franchise records data and the new variable `franAge`
+created previously, I have created a contingency table below that shows
+the frequency of franchises by age classification (either Oldest or
+Newest). Newest franchises are more frequent by almost double that of
+Oldest franchises, however, that data is somewhat misleading. Each
+franchise appears twice in the dataset based on type of season. See more
+below.
 
 ``` r
 kable(table(franData$franAge))
@@ -521,7 +561,9 @@ kable(table(franData$franAge, franData$data.gameTypeId), col.names = c("Regular 
 | Newest |             29 |       28 |
 | Oldest |             15 |       15 |
 
-<br> \#Graphing <br>
+<br>
+
+# Graphing
 
 ## Boxplot: Winning Percentage by Franchise Age
 
@@ -530,7 +572,9 @@ classification. The plots reveal that the newest franchises have greater
 variability in winning percentage than teams classified “Oldest”.
 
 ``` r
-ggplot(franData, aes(x = franAge, y = winPct)) + geom_boxplot() + geom_jitter(aes(color=franAge)) + ggtitle("Boxplot of Winning Percentage by Franchise Age") + ylab("Winning Percentage") + xlab("Franchise Age Classification")
+ggplot(franData, aes(x = franAge, y = winPct)) + geom_boxplot() + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Boxplot of Winning Percentage by Franchise Age") + ylab("Winning Percentage") + 
+  xlab("Franchise Age Classification")
 ```
 
 ![](Project1Vignette_files/figure-gfm/boxplot1-1.png)<!-- --> <br>
@@ -550,7 +594,8 @@ longer and simply have the opportunity to win more games than newer
 franchises.
 
 ``` r
-ggplot(franData, aes(x = data.wins, y = data.roadWins)) + geom_jitter(aes(color=franAge)) + ggtitle("Scatterplot of Total Wins vs. Road Wins") + ylab("Wins on the Road") + xlab("Total Wins")
+ggplot(franData, aes(x = data.wins, y = data.roadWins)) + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Scatterplot of Total Wins vs. Road Wins") + ylab("Wins on the Road") + xlab("Total Wins")
 ```
 
 ![](Project1Vignette_files/figure-gfm/scatter-1.png)<!-- --> <br> \#\#
@@ -568,7 +613,8 @@ because they have simply have longer (i.e more opportunity) to
 experience those things ove newer franchises.
 
 ``` r
-ggplot(franData, aes(x = data.losses, y = data.penaltyMinutes, group=franAge)) + geom_jitter(aes(color=franAge)) + ggtitle("Scatterplot of Total Losses vs. Penalty Minutes") + ylab("Total Penalty Minutes") + xlab("Total Losses")
+ggplot(franData, aes(x = data.losses, y = data.penaltyMinutes, group=franAge)) + geom_jitter(aes(color=franAge)) + 
+  ggtitle("Scatterplot of Total Losses vs. Penalty Minutes") + ylab("Total Penalty Minutes") + xlab("Total Losses")
 ```
 
 ![](Project1Vignette_files/figure-gfm/scatter2-1.png)<!-- -->
@@ -582,7 +628,8 @@ revealing that goalies most frequently play 1 to 2 seasons.
 vanGoalieData <- fetchGoalieRecords(ID=20)
 vanGoalieData <- vanGoalieData[[1]][26]
 
-ggplot(vanGoalieData, aes(x=seasons)) + geom_histogram(bins=10) + ggtitle("Histogram of Seasons Played by Vancouver Canucks Goalies") + xlab("Seasons Played")
+ggplot(vanGoalieData, aes(x=seasons)) + geom_histogram(bins=10) + 
+  ggtitle("Histogram of Seasons Played by Vancouver Canucks Goalies") + xlab("Seasons Played")
 ```
 
 ![](Project1Vignette_files/figure-gfm/hist-1.png)<!-- --> <br>
@@ -602,7 +649,8 @@ the only position to register 6 goals max per game (the largest per game
 total recorded for the Canadiens).
 
 ``` r
-ggplot(canSkateRec, aes(x=data.mostGoalsOneGame)) + geom_bar(aes(fill=data.positionCode), position="dodge") + scale_fill_discrete("Position") + xlab("Max Goals in One Game") + ggtitle("Barplot of Max Goals/Game by Position")
+ggplot(canSkateRec, aes(x=data.mostGoalsOneGame)) + geom_bar(aes(fill=data.positionCode), position="dodge") + 
+  scale_fill_discrete("Position") + xlab("Max Goals in One Game") + ggtitle("Barplot of Max Goals/Game by Position")
 ```
 
 ![](Project1Vignette_files/figure-gfm/barplot-1.png)<!-- -->
